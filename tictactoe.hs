@@ -1,6 +1,5 @@
 import Board
 import System.Environment
-import Control.Monad.Loops
 import Data.Maybe as Maybe
 
 mainLoop :: (Board, Player, Integer) -> IO (Board, Player, Integer) 
