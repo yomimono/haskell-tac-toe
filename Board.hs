@@ -20,9 +20,6 @@ newBoard x
 	| otherwise =
 		Map.fromList [ ((p, y), Unclaimed ) | p <- [1..x], y <- [1..x] ]
 
-getBoardState :: Integer -> Integer -> Board -> Maybe Player
-getBoardState x y map = Map.lookup (x, y) map 
-
 advancePlay :: (Integer, Integer) -> Player -> Board -> Board
 advancePlay (x, y) player map = 
 	Map.insert (x, y) player map
@@ -31,7 +28,7 @@ showBoardRow :: Integer -> Integer -> Board -> String
 showBoardRow row limit board 
 	| row <= 0 || limit <= 0 || Map.null board = ""
 	| otherwise =
-		List.intercalate "|" [ show (Maybe.fromJust $ getBoardState row column board) | column <- [1..limit] ]
+		List.intercalate "|" [ show (Maybe.fromJust $ Map.lookup (row, column) board) | column <- [1..limit] ]
 
 showBoardState :: Integer -> Board -> String
 showBoardState limit board
