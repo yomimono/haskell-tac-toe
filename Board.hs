@@ -4,6 +4,8 @@ import Data.Map as Map
 import Data.List as List
 import Data.Maybe as Maybe
 
+import System.Random as Random
+
 data Player = Unclaimed | Player1 | Player2 deriving (Eq, Ord)
 type Board = Map (Integer, Integer) Player
 
@@ -94,12 +96,28 @@ winningPlays size player board
 	| Map.null board = []
 	| otherwise =
 		[ p | p <- (validPlays board), isWinningSet size ((getPlayerMoves player board) ++ [p]) ]
-	
+
 --try to win; failing that, try to keep the other player from winning; failing that, do something valid
 chooseNextPlay :: Board -> Player -> Integer -> (Integer, Integer) 
 chooseNextPlay board player size =
 	head ( winningPlays size player board  ++  winningPlays size (nextPlayer player) board  ++ validPlays board)
 
+getHumanPlay :: IO (Integer, Integer)
+getHumanPlay = do
+        putStrLn $ "Please choose your move by inputting a pair, e.g. (1, 1)."
+	moveChosen <- getLine
+	let verifiedMoveChosen = r moveChosen
+		where r = read :: String -> (Integer, Integer) 
+	return verifiedMoveChosen
+
+humanPlay :: Board -> IO (Integer, Integer)
+humanPlay board = do
+	verifiedMoveChosen <- getHumanPlay
+	if verifiedMoveChosen `elem` (validPlays board) then
+		return verifiedMoveChosen
+	else humanPlay board
+
+--TODO: human player (player 1) should get interaction instead
 nextGameState :: (Player, Board, Integer) -> (Player, Board, Integer)
 nextGameState (player, board, size)
 	| player == Unclaimed || noMoreMoves board = (Unclaimed, board, size)

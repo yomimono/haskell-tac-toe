@@ -16,7 +16,10 @@ mainLoop (board, player, size) = do
 					putStrLn "The game was a draw."
 			return (board, player, size)
 		else 
-			mainLoop (nextBoard, nextPlayer(player), size)
+			if player == Player1 then do
+				nextHumanPlay <- humanPlay board
+				mainLoop ((advancePlay nextHumanPlay player board), nextPlayer player , size)
+			else mainLoop (nextBoard, nextPlayer(player), size)
 				where 	nextBoard = mid (nextGameState(player, board, size))
 					mid (x, y, z) = y
 
