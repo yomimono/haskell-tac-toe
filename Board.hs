@@ -3,7 +3,6 @@ module Board where
 import Data.Map as Map
 import Data.List as List
 import Data.Maybe as Maybe
-
 import System.Random as Random
 
 data Player = Unclaimed | Player1 | Player2 deriving (Eq, Ord)
@@ -19,10 +18,6 @@ newBoard x
 	| x <= 0 = (Map.empty)
 	| otherwise =
 		Map.fromList [ ((p, y), Unclaimed ) | p <- [1..x], y <- [1..x] ]
-
-advancePlay :: (Integer, Integer) -> Player -> Board -> Board
-advancePlay (x, y) player map = 
-	Map.insert (x, y) player map
 
 showBoardRow :: Integer -> Integer -> Board -> String
 showBoardRow row limit board 
@@ -43,22 +38,6 @@ noMoreMoves board
 	| otherwise =
 		Map.null $ Map.filter (== Unclaimed) board 
 			
-nextPlayer :: Player -> Player
-nextPlayer Player1 = Player2			
-nextPlayer Player2 = Player1
-
-validPlay :: (Integer, Integer) -> Board -> Bool
-validPlay (x, y) board 
-	| noMoreMoves board = False
-	| Map.lookup (x, y) board /= Just Unclaimed = False
-	| otherwise = True
-
-validPlays :: Board -> [(Integer, Integer)]
-validPlays board
-	| noMoreMoves board = []
-	| otherwise =
-		keys $ Map.filter (== Unclaimed) board
-
 isWinningSet :: Integer -> [(Integer, Integer)] -> Bool
 isWinningSet _ [] = False
 isWinningSet 1 points = True
@@ -83,40 +62,16 @@ winner board size
 	| isWinningSet size (getPlayerMoves Player1 board) = Just Player1
 	| isWinningSet size (getPlayerMoves Player2 board) = Just Player2
 	| otherwise = Just Unclaimed
-		
+
+score :: Board -> Integer -> Integer
+score board size 
+	| Map.null board = 0
+	| otherwise =
+		case (winner board size) of
+			Just Player1 -> 1
+			Just Player2 -> -1
+			Just Unclaimed -> 0
 
 gameOver :: Board -> Integer -> Bool
 gameOver board boardsize = ((winner board boardsize /= Just Unclaimed) || (noMoreMoves board))
 
-winningPlays :: Integer -> Player -> Board -> [(Integer, Integer)]
-winningPlays size player board 
-	| Map.null board = []
-	| otherwise =
-		[ p | p <- (validPlays board), isWinningSet size ((getPlayerMoves player board) ++ [p]) ]
-
---try to win; failing that, try to keep the other player from winning; failing that, do something valid
-chooseNextPlay :: Board -> Player -> Integer -> (Integer, Integer) 
-chooseNextPlay board player size =
-	head ( winningPlays size player board  ++  winningPlays size (nextPlayer player) board  ++ validPlays board)
-
-getHumanPlay :: IO (Integer, Integer)
-getHumanPlay = do
-        putStrLn $ "Please choose your move by inputting a pair, e.g. (1, 1)."
-	moveChosen <- getLine
-	let verifiedMoveChosen = r moveChosen
-		where r = read :: String -> (Integer, Integer) 
-	return verifiedMoveChosen
-
-humanPlay :: Board -> IO (Integer, Integer)
-humanPlay board = do
-	verifiedMoveChosen <- getHumanPlay
-	if verifiedMoveChosen `elem` (validPlays board) then
-		return verifiedMoveChosen
-	else humanPlay board
-
---TODO: human player (player 1) should get interaction instead
-nextGameState :: (Player, Board, Integer) -> (Player, Board, Integer)
-nextGameState (player, board, size)
-	| player == Unclaimed || noMoreMoves board = (Unclaimed, board, size)
-	| otherwise =
-		(nextPlayer player, advancePlay (chooseNextPlay board player size) player board, size)
