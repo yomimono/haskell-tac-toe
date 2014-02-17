@@ -52,6 +52,12 @@ validPlays board
         | otherwise =
                 keys $ Map.filter (== Unclaimed) board
 
+--take advantage of board symmetry
+nonDuplicatePlays :: Board -> [ (Integer, Integer) ]
+nonDuplicatePlays board 
+        | noMoreMoves board = []
+        | otherwise = validPlays board
+
 advancePlay :: (Integer, Integer) -> Player -> Board -> Board
 advancePlay (x, y) player map =
         Map.insert (x, y) player map
@@ -69,7 +75,7 @@ intermediateScore morePlies size player board
 bestMove :: Integer -> Player -> Board -> (Integer, Integer)
 bestMove size player board =
         snd (List.foldl' (pairEval (pairPlayerEval player)) (playerBound player, head (validPlays board)) possibleBoards)
-                where possibleBoards = [ ((intermediateScore 10 size player (advancePlay p player board)), p) | p <- validPlays board ]
+                where possibleBoards = [ ((intermediateScore 3 size player (advancePlay p player board)), p) | p <- validPlays board ]
 
 nextGameState :: (Player, Board, Integer) -> (Player, Board, Integer)
 nextGameState (player, board, size)
