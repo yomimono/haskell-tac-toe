@@ -1,8 +1,10 @@
 module Plays where
 
 import Board
+import Symmetry
 import Data.List as List
 import Data.Map as Map
+import Data.Maybe as Maybe
 
 nextPlayer :: Player -> Player
 nextPlayer Player1 = Player2
@@ -25,38 +27,12 @@ pairEval fun pair other =
         if (fun (fst pair) (fst other)) == fst pair then pair
         else other
 
-getHumanPlay :: IO (Integer, Integer)
-getHumanPlay = do
-        putStrLn $ "Please choose your move by inputting a pair, e.g. (1, 1)."
-        moveChosen <- getLine
-        return (r moveChosen)
-                where r = read :: String -> (Integer, Integer)
-
-humanPlay :: Board -> IO (Integer, Integer)
-humanPlay board = do
-        verifiedMoveChosen <- getHumanPlay
-        if verifiedMoveChosen `elem` (validPlays board) then
-                return verifiedMoveChosen
-        else humanPlay board
-
-
 validPlay :: (Integer, Integer) -> Board -> Bool
 validPlay (x, y) board
         | noMoreMoves board = False
         | Map.lookup (x, y) board /= Just Unclaimed = False
         | otherwise = True
 
-validPlays :: Board -> [(Integer, Integer)]
-validPlays board
-        | noMoreMoves board = []
-        | otherwise =
-                keys $ Map.filter (== Unclaimed) board
-
---take advantage of board symmetry
-nonDuplicatePlays :: Board -> [ (Integer, Integer) ]
-nonDuplicatePlays board 
-        | noMoreMoves board = []
-        | otherwise = validPlays board
 
 advancePlay :: (Integer, Integer) -> Player -> Board -> Board
 advancePlay (x, y) player map =
@@ -74,8 +50,8 @@ intermediateScore morePlies size player board
 
 bestMove :: Integer -> Player -> Board -> (Integer, Integer)
 bestMove size player board =
-        snd (List.foldl' (pairEval (pairPlayerEval player)) (playerBound player, head (validPlays board)) possibleBoards)
-                where possibleBoards = [ ((intermediateScore 3 size player (advancePlay p player board)), p) | p <- validPlays board ]
+        snd (List.foldl' (pairEval (pairPlayerEval player)) (playerBound player, head (nonDuplicatePlays size board)) possibleBoards)
+                where possibleBoards = [ ((intermediateScore 5 size player (advancePlay p player board)), p) | p <- nonDuplicatePlays size board ]
 
 nextGameState :: (Player, Board, Integer) -> (Player, Board, Integer)
 nextGameState (player, board, size)
