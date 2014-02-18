@@ -1,7 +1,23 @@
 import Board
 import Plays
+import Symmetry
 import System.Environment
+import System.IO.Error
 import Data.Maybe as Maybe
+
+getHumanPlay :: IO (Integer, Integer)
+getHumanPlay = do  
+        putStrLn $ "Please choose your move by inputting a pair, e.g. (1, 1)."
+        moveChosen <- getLine
+        return (r moveChosen)
+                where r = read :: String -> (Integer, Integer)
+
+humanPlay :: Board -> IO (Integer, Integer)
+humanPlay board = do
+        verifiedMoveChosen <- getHumanPlay
+        if verifiedMoveChosen `elem` (validPlays board) then
+                return verifiedMoveChosen
+        else humanPlay board
 
 mainLoop :: (Board, Player, Integer) -> IO (Board, Player, Integer) 
 mainLoop (board, player, size) = do
@@ -18,7 +34,7 @@ mainLoop (board, player, size) = do
 			return (board, player, size)
 		else 
 			if player == Player1 then do
-				nextHumanPlay <- humanPlay board
+				nextHumanPlay <- (humanPlay board) 
 				mainLoop ((advancePlay nextHumanPlay player board), nextPlayer player , size)
 			else 
 				mainLoop (nextBoard, nextPlayer(player), size)
