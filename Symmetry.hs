@@ -30,15 +30,18 @@ verticallySymmetricalPoint :: Integer -> (Integer, Integer) -> (Integer, Integer
 verticallySymmetricalPoint 1 _ = (1, 1)
 verticallySymmetricalPoint size (x, y) = (x, size - y + 1)
 
+half :: Integer -> Integer
+half x = ceiling ((fromIntegral x) / 2.0 :: Float)
+
 leftHalf :: Integer -> [ (Integer, Integer)]
 leftHalf 1 = [(1, 1)]
 leftHalf boardSize = [ (x,y) | x <- [1..limit], y <- [1..boardSize] ]
-        where limit = boardSize `div` 2 --incorrectly truncates
+        where limit = half boardSize
 
 topHalf :: Integer -> [ (Integer, Integer)]
 topHalf 1 = [(1, 1)]
 topHalf boardSize = [ (x,y) | x <- [1..boardSize], y <- [1..limit] ]
-        where limit = boardSize `div` 2
+        where limit = half boardSize
 
 hasSymmetry :: Integer -> Board -> [(Integer, Integer) ] -> ( (Integer, Integer) -> (Integer, Integer) ) -> Bool
 hasSymmetry size board generator symmetryFun
