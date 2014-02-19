@@ -18,21 +18,19 @@ playerBound :: Player -> Integer
 playerBound Player1 = -100000
 playerBound Player2 =  100000
 
-pairPlayerEval :: Ord a => Player -> (a -> a -> a)
-pairPlayerEval Player1 = max
-pairPlayerEval Player2 = min
+pairPlayerEval :: Player -> Ordering
+pairPlayerEval Player1 = GT
+pairPlayerEval Player2 = LT
 
-pairEval :: Eq a => (a -> a -> a) -> (a, b) -> (a, b) -> (a, b)
-pairEval fun pair other =
-        if (fun (fst pair) (fst other)) == fst pair then pair
+pairEval :: Ord a => Ordering -> (a, b) -> (a, b) -> (a, b)
+pairEval ordering pair other =
+        if compare (fst pair) (fst other) == ordering then
+                pair
         else other
 
 validPlay :: (Integer, Integer) -> Board -> Bool
-validPlay (x, y) board
-        | noMoreMoves board = False
-        | Map.lookup (x, y) board /= Just Unclaimed = False
-        | otherwise = True
-
+validPlay (x, y) board =
+        Map.lookup (x, y) board == Just Unclaimed
 
 advancePlay :: (Integer, Integer) -> Player -> Board -> Board
 advancePlay (x, y) player map =
@@ -40,18 +38,21 @@ advancePlay (x, y) player map =
 
 intermediateScore :: Integer -> Integer -> Player -> Board -> Integer
 intermediateScore morePlies size player board
-        | gameOver board size = score board size
+        | gameOver board size = Maybe.fromJust (score board size)
 	| morePlies <= 0 = 
 		if length (winningPlays size player board) == 0 then 0
 		else if player == Player1 then 1
 		else -1
         | otherwise = --make a list of boards with the next play in them, map the list to intermediate scores, return the maximum or minimum as approproate
-                (playerEval (nextPlayer player)) (List.map (intermediateScore (morePlies - 1) size (nextPlayer player)) [ (advancePlay p (nextPlayer player) board) | p <- validPlays board ])
+                (playerEval (nextPlayer player)) (List.map (intermediateScore (morePlies - 1) size (nextPlayer player)) nextPlays)
+                where nextPlays = [ (advancePlay p (nextPlayer player) board) | p <- nonDuplicatePlays size board ]
 
 bestMove :: Integer -> Player -> Board -> (Integer, Integer)
 bestMove size player board =
-        snd (List.foldl' (pairEval (pairPlayerEval player)) (playerBound player, head (nonDuplicatePlays size board)) possibleBoards)
-                where possibleBoards = [ ((intermediateScore 5 size player (advancePlay p player board)), p) | p <- nonDuplicatePlays size board ]
+        snd (List.foldl' fitness acc possibleBoards) 
+                where   possibleBoards = [ ((intermediateScore 5 size player (advancePlay p player board)), p) | p <- nonDuplicatePlays size board ] --break this up
+                        fitness = (pairEval (pairPlayerEval player))
+                        acc = (playerBound player, undefined)
 
 nextGameState :: (Player, Board, Integer) -> (Player, Board, Integer)
 nextGameState (player, board, size)
