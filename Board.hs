@@ -33,10 +33,8 @@ showBoardState limit board
 			where separator = "\n" ++ ((take (fromInteger (limit + limit - 1))) (repeat '-')) ++ "\n"
 
 noMoreMoves :: Board -> Bool
-noMoreMoves board
-	| Map.null board = True
-	| otherwise =
-		Map.null $ Map.filter (== Unclaimed) board 
+noMoreMoves board =
+	Map.null $ Map.filter (== Unclaimed) board 
 			
 isWinningSet :: Integer -> [(Integer, Integer)] -> Bool
 isWinningSet _ [] = False
@@ -51,27 +49,25 @@ isWinningSet limit points
 			rdiags = [ (x, y) | (x, y) <- points, x == limit - y + 1 ]
 
 getPlayerMoves :: Player -> Board -> [(Integer, Integer)]
-getPlayerMoves player board
-	| Map.null board = []
-	| otherwise = 
-		Map.keys $ fst $ Map.partition (== player) board 
+getPlayerMoves player board =
+	Map.keys $ fst $ Map.partition (== player) board 
 	
 winner :: Board -> Integer -> Maybe Player
 winner board size
-	| Map.null board = Nothing	
 	| isWinningSet size (getPlayerMoves Player1 board) = Just Player1
 	| isWinningSet size (getPlayerMoves Player2 board) = Just Player2
-	| otherwise = Just Unclaimed
+	| noMoreMoves board = Just Unclaimed
+	| otherwise = Nothing
 
-score :: Board -> Integer -> Integer
-score board size 
-	| Map.null board = 0
-	| otherwise =
-		case (winner board size) of
-			Just Player1 -> 1
-			Just Player2 -> -1
-			Just Unclaimed -> 0
+score :: Board -> Integer -> Maybe Integer
+score board size =
+	case (winner board size) of
+		Just Player1 -> Just 1
+		Just Player2 -> Just (-1)
+		Just Unclaimed -> Just 0
+		Nothing -> Nothing
 
 gameOver :: Board -> Integer -> Bool
-gameOver board boardsize = ((winner board boardsize /= Just Unclaimed) || (noMoreMoves board))
+gameOver board boardsize = 
+	not( (winner board boardsize) == Nothing )
 
