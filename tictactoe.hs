@@ -39,7 +39,7 @@ mainLoop (board, player, size) = do
 					mid (x, y, z) = y
 
 main = do
-        (boardsize:_) <- getArgs
-        let board = newBoard (read boardsize)
+    (boardsize:_) <- getArgs
+    let board = newBoard (read boardsize)
 	let player = Player1
 	mainLoop (board, player, (read boardsize))

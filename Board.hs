@@ -6,7 +6,8 @@ import Data.Maybe as Maybe
 import System.Random as Random
 
 data Player = Unclaimed | Player1 | Player2 deriving (Eq, Ord)
-type Board = Map (Integer, Integer) Player
+data Board = Board (Map (Integer, Integer) Player) Integer
+--type Board = Map (Integer, Integer) Player
 
 instance Show Player where 
 	show Unclaimed = " "
