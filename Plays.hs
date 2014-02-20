@@ -45,7 +45,7 @@ intermediateScore morePlies size player board
 		else -1
         | otherwise = --make a list of boards with the next play in them, map the list to intermediate scores, return the maximum or minimum as approproate
                 (playerEval (nextPlayer player)) (List.map (intermediateScore (morePlies - 1) size (nextPlayer player)) nextPlays)
-                where nextPlays = [ (advancePlay p (nextPlayer player) board) | p <- nonDuplicatePlays size board ]
+                where nextPlays = [ (advancePlay p (nextPlayer player) board) | p <- validPlays board ]
 
 bestMove :: Integer -> Player -> Board -> (Integer, Integer)
 bestMove size player board =
