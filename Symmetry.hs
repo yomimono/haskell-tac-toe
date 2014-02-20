@@ -5,15 +5,12 @@ import Data.List as List
 import Data.Map as Map
 
 validPlays :: Board -> [(Integer, Integer)]
-validPlays board
-        | noMoreMoves board = []
-        | otherwise =
-                keys $ Map.filter (== Unclaimed) board
+validPlays board =
+         keys $ Map.filter (== Unclaimed) board
 
 --take advantage of board symmetry
 nonDuplicatePlays :: Integer -> Board -> [ (Integer, Integer) ]
 nonDuplicatePlays size board 
-        | noMoreMoves board = []
         | hasSymmetry size board l (verticallySymmetricalPoint size) = List.intersect l valid
         | hasSymmetry size board t (horizontallySymmetricalPoint size) = List.intersect t valid
         | otherwise = valid
@@ -22,12 +19,11 @@ nonDuplicatePlays size board
         	t = topHalf size
         	valid = validPlays board
 
+--kill these; make them inline
 horizontallySymmetricalPoint :: Integer -> (Integer, Integer) -> (Integer, Integer) 
-horizontallySymmetricalPoint 1 _ = (1, 1)
 horizontallySymmetricalPoint size (x, y) = (size - x + 1, y)
 
 verticallySymmetricalPoint :: Integer -> (Integer, Integer) -> (Integer, Integer)
-verticallySymmetricalPoint 1 _ = (1, 1)
 verticallySymmetricalPoint size (x, y) = (x, size - y + 1)
 
 half :: Integer -> Integer
