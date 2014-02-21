@@ -7,7 +7,6 @@ import System.Random as Random
 
 data Player = Unclaimed | Player1 | Player2 deriving (Eq, Ord)
 data Board = Board (Map (Integer, Integer) Player) Integer
---type Board = Map (Integer, Integer) Player
 
 instance Show Player where 
 	show Unclaimed = " "
@@ -15,33 +14,27 @@ instance Show Player where
 	show Player2 = "O"
 
 newBoard :: Integer -> Board
-newBoard x  
-	| x <= 0 = (Map.empty)
-	| otherwise =
-		Map.fromList [ ((p, y), Unclaimed ) | p <- [1..x], y <- [1..x] ]
+newBoard x =
+		Board (Map.fromList [ ((p, y), Unclaimed ) | p <- [1..x], y <- [1..x] ]) x
 
-showBoardRow :: Integer -> Integer -> Board -> String
-showBoardRow row limit board 
-	| row <= 0 || limit <= 0 || Map.null board = ""
-	| otherwise =
+showBoardRow :: Integer -> Board -> String
+showBoardRow row (Board board limit) =
 		List.intercalate "|" [ show (Maybe.fromJust $ Map.lookup (row, column) board) | column <- [1..limit] ]
 
-showBoardState :: Integer -> Board -> String
-showBoardState limit board
-	| Map.null board = ""
-	| otherwise = 
-		List.intercalate separator [ showBoardRow x limit board | x <- [1..limit ] ]
-			where separator = "\n" ++ ((take (fromInteger (limit + limit - 1))) (repeat '-')) ++ "\n"
+showBoardState :: Board -> String
+showBoardState (Board board limit) =
+		List.intercalate separator [ showBoardRow x (Board board limit) | x <- [1..limit ] ]
+			where separator = "\n" ++ replicate (fromInteger (limit + limit - 1)) '-' ++ "\n"
 
 noMoreMoves :: Board -> Bool
-noMoreMoves board =
+noMoreMoves (Board board _) =
 	Map.null $ Map.filter (== Unclaimed) board 
 			
-isWinningSet :: Integer -> [(Integer, Integer)] -> Bool
+isWinningSet :: Board -> [(Integer, Integer)] -> Bool
 isWinningSet _ [] = False
-isWinningSet 1 points = True
-isWinningSet limit points 
-	| (toInteger (length points)) < limit = False
+isWinningSet (Board _ 1) points = True
+isWinningSet (Board _ limit) points 
+	| toInteger (length points) < limit = False
 	| otherwise = 
 		or rows || or columns || (toInteger (length ldiags) >= limit) || (toInteger (length rdiags) >= limit)
 		where 	rows = [ toInteger (length (List.filter ( == p) $ fst $ unzip points)) >= limit | p <- [1..limit] ]
@@ -50,25 +43,25 @@ isWinningSet limit points
 			rdiags = [ (x, y) | (x, y) <- points, x == limit - y + 1 ]
 
 getPlayerMoves :: Player -> Board -> [(Integer, Integer)]
-getPlayerMoves player board =
+getPlayerMoves player (Board board _) =
 	Map.keys $ fst $ Map.partition (== player) board 
 	
-winner :: Board -> Integer -> Maybe Player
-winner board size
-	| isWinningSet size (getPlayerMoves Player1 board) = Just Player1
-	| isWinningSet size (getPlayerMoves Player2 board) = Just Player2
+winner :: Board -> Maybe Player
+winner board
+	| isWinningSet board (getPlayerMoves Player1 board) = Just Player1
+	| isWinningSet board (getPlayerMoves Player2 board) = Just Player2
 	| noMoreMoves board = Just Unclaimed
 	| otherwise = Nothing
 
-score :: Board -> Integer -> Maybe Integer
-score board size =
-	case (winner board size) of
+score :: Board -> Maybe Integer
+score board =
+	case winner board of
 		Just Player1 -> Just 1
 		Just Player2 -> Just (-1)
 		Just Unclaimed -> Just 0
 		Nothing -> Nothing
 
-gameOver :: Board -> Integer -> Bool
-gameOver board boardsize = 
-	not( (winner board boardsize) == Nothing )
+gameOver :: Board -> Bool
+gameOver board = 
+	isJust (winner board)
 
