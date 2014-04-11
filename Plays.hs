@@ -2,6 +2,7 @@ module Plays where
 
 import Board
 import Symmetry
+import Data.Array as Array
 import Data.List as List
 import Data.Map as Map
 import Data.Maybe as Maybe
@@ -29,12 +30,12 @@ pairEval ordering pair other =
         else other
 
 validPlay :: (Integer, Integer) -> Board -> Bool
-validPlay (x, y) (Board board size) =
-        Map.lookup (x, y) board == Just Unclaimed
+validPlay point (Board board size) =
+        board Array.! point == Unclaimed
 
 advancePlay :: (Integer, Integer) -> Player -> Board -> Board
-advancePlay (x, y) player (Board board size) =
-        Board (Map.insert (x, y) player board) size
+advancePlay point player (Board board size) =
+        Board (board Array.// [ (point, player) ] ) size
 
 intermediateScore :: Integer -> Player -> Board -> Integer
 intermediateScore morePlies player board

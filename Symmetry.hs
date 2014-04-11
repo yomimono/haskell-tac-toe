@@ -1,12 +1,12 @@
 module Symmetry where
 
 import Board
+import Data.Array as Array
 import Data.List as List
 import Data.Map as Map
 
 validPlays :: Board -> [(Integer, Integer)]
-validPlays (Board board size) =
-  keys $ Map.filter (== Unclaimed) board
+validPlays = getPlayerMoves Unclaimed 
 
 --take advantage of board symmetry
 nonDuplicatePlays :: Board -> [ (Integer, Integer) ]
@@ -68,5 +68,5 @@ trHalf boardSize = [ (x, y) | x <- [1..boardSize], y <- [1..boardSize], y >= x ]
 
 hasSymmetry :: Board -> [(Integer, Integer) ] -> ( (Integer, Integer) -> (Integer, Integer) ) -> Bool
 hasSymmetry (Board board size) generator symmetryFun =
-     and [ Map.lookup point board == Map.lookup (symmetryFun point) board | point <- generator ]
+     and [ board Array.! point == board Array.! symmetryFun point | point <- generator ]
         

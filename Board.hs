@@ -1,12 +1,16 @@
 module Board where
 
-import Data.Map as Map
+import Data.Array as Array
 import Data.List as List
 import Data.Maybe as Maybe
+import Data.Map as Map
 import System.Random as Random
 
 data Player = Unclaimed | Player1 | Player2 deriving (Eq, Ord)
-data Board = Board (Map (Integer, Integer) Player) Integer
+data Board = Board (Array (Integer, Integer) Player) Integer
+
+instance Show Board where
+  show = showBoardState
 
 instance Show Player where 
 	show Unclaimed = " "
@@ -15,11 +19,11 @@ instance Show Player where
 
 newBoard :: Integer -> Board
 newBoard x =
-		Board (Map.fromList [ ((p, y), Unclaimed ) | p <- [1..x], y <- [1..x] ]) x
+		Board (Array.array ((1,1), (x,x)) [ ((p, y), Unclaimed ) | p <- [1..x], y <- [1..x] ]) x
 
 showBoardRow :: Integer -> Board -> String
 showBoardRow row (Board board limit) =
-		List.intercalate "|" [ show (Maybe.fromJust $ Map.lookup (row, column) board) | column <- [1..limit] ]
+		List.intercalate "|" [ show (board Array.! (row, column) ) | column <- [1..limit] ]
 
 showBoardState :: Board -> String
 showBoardState (Board board limit) =
@@ -28,7 +32,7 @@ showBoardState (Board board limit) =
 
 noMoreMoves :: Board -> Bool
 noMoreMoves (Board board _) =
-	Map.null $ Map.filter (== Unclaimed) board 
+	Unclaimed `notElem` Array.elems board
 			
 isWinningSet :: Board -> [(Integer, Integer)] -> Bool
 isWinningSet _ [] = False
@@ -44,7 +48,7 @@ isWinningSet (Board _ limit) points
 
 getPlayerMoves :: Player -> Board -> [(Integer, Integer)]
 getPlayerMoves player (Board board _) =
-	Map.keys $ fst $ Map.partition (== player) board 
+	fst $ unzip $ List.filter (\ pair -> snd pair == player) (Array.assocs board)
 	
 winner :: Board -> Maybe Player
 winner board
