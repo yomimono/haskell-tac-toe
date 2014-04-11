@@ -5,25 +5,32 @@ import System.Environment
 import System.IO.Error
 import Data.Maybe as Maybe
 
-getHumanPlay :: IO (Integer, Integer)
-getHumanPlay = do  
+data PlayerType = Internal | External deriving Eq --or if you prefer, AI | Human
+
+playerVector :: Int -> ((Player, PlayerType), (Player, PlayerType))
+playerVector 0 = ((Player1, Internal), (Player2, Internal))
+playerVector 1 = ((Player1, External), (Player2, Internal))
+playerVector 2 = ((Player1, External), (Player2, External))
+
+getExternalPlay :: IO (Integer, Integer)
+getExternalPlay = do  
     putStrLn "Please choose your move by inputting a pair, e.g. (1, 1)."
     moveChosen <- getLine
     return (read moveChosen)
 
-humanPlay :: Board -> IO (Integer, Integer)
-humanPlay board = do
-    verifiedMoveChosen <- getHumanPlay
+externalPlay :: Board -> IO (Integer, Integer)
+externalPlay board = do
+    verifiedMoveChosen <- getExternalPlay
     if verifiedMoveChosen `elem` validPlays board then
 		return verifiedMoveChosen
-    else humanPlay board
+    else externalPlay board
 
 explainEndgame :: Player -> IO ()
-explainEndgame Unclaimed = putStrLn "The game was a draw."
+explainEndgame Unclaimed = putStrLn "A strange game.  The only winning move is not to play."
 explainEndgame x = putStrLn ("The winner is player "  ++ (show x ++ "."))
 
-mainLoop :: (Board, Player) -> IO (Board, Player) 
-mainLoop (board, player) = do
+mainLoop :: (Board, (Player, PlayerType), (Player, PlayerType)) -> IO (Board, Player) 
+mainLoop (board, (player, playerType), (nextPlayer, nextPlayerType)) = do
 	putStrLn ""
 	putStrLn $ showBoardState board
 	case winner board of
@@ -31,13 +38,14 @@ mainLoop (board, player) = do
 			explainEndgame x
 			return (board, player)
 		Nothing -> 
-			if player == Player1 then do
-				nextHumanPlay <- humanPlay board
-				mainLoop (advancePlay nextHumanPlay player board, nextPlayer player)
+			if playerType == External then do
+				nextExternalPlay <- externalPlay board
+				mainLoop (advancePlay nextExternalPlay player board, (nextPlayer, nextPlayerType), (player, playerType))
 			else 
-				mainLoop (snd (nextGameState(player, board)), nextPlayer player)
+				mainLoop (snd (nextGameState(player, board)), (nextPlayer, nextPlayerType), (player, playerType))
 
 main = do
-	(boardsize:_) <- getArgs
+	(boardsize:hPlayers:_) <- getArgs
 	let board = read boardsize
-	mainLoop (newBoard board, Player1)
+	let players = playerVector (read hPlayers)  --TODO: no arg or 0 means AI vs AI, 1 means human v AI, 2 means human v human
+	mainLoop (newBoard board, fst players, snd players)
