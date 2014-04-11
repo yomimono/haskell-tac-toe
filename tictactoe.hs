@@ -8,9 +8,9 @@ import Data.Maybe as Maybe
 data PlayerType = Internal | External deriving Eq --or if you prefer, AI | Human
 
 playerVector :: Int -> ((Player, PlayerType), (Player, PlayerType))
-playerVector 0 = ((Player1, Internal), (Player2, Internal))
 playerVector 1 = ((Player1, External), (Player2, Internal))
 playerVector 2 = ((Player1, External), (Player2, External))
+playerVector _ = ((Player1, Internal), (Player2, Internal))
 
 getExternalPlay :: IO (Integer, Integer)
 getExternalPlay = do  
