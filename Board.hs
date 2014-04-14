@@ -7,10 +7,12 @@ import Data.Map as Map
 import System.Random as Random
 
 data Player = Unclaimed | Player1 | Player2 deriving (Eq, Ord)
-data Board = Board (Array (Integer, Integer) Player) Integer
+data Board = Board (Array (Integer, Integer) Player) Integer deriving (Eq, Ord)
 
 instance Show Board where
-  show = showBoardState
+  show (Board board limit) =
+		List.intercalate separator [ showBoardRow x (Board board limit) | x <- [1..limit ] ]
+			where separator = "\n" ++ replicate (fromInteger (limit + limit - 1)) '-' ++ "\n"
 
 instance Show Player where 
 	show Unclaimed = " "
@@ -24,11 +26,6 @@ newBoard x =
 showBoardRow :: Integer -> Board -> String
 showBoardRow row (Board board limit) =
 		List.intercalate "|" [ show (board Array.! (row, column) ) | column <- [1..limit] ]
-
-showBoardState :: Board -> String
-showBoardState (Board board limit) =
-		List.intercalate separator [ showBoardRow x (Board board limit) | x <- [1..limit ] ]
-			where separator = "\n" ++ replicate (fromInteger (limit + limit - 1)) '-' ++ "\n"
 
 noMoreMoves :: Board -> Bool
 noMoreMoves (Board board _) =
