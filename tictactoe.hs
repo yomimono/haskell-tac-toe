@@ -32,7 +32,7 @@ explainEndgame x = putStrLn ("The winner is player "  ++ (show x ++ "."))
 mainLoop :: (Board, (Player, PlayerType), (Player, PlayerType)) -> IO (Board, Player) 
 mainLoop (board, (player, playerType), (nextPlayer, nextPlayerType)) = do
 	putStrLn ""
-	putStrLn $ showBoardState board
+	print board
 	case winner board of
 		Just x -> do
 			explainEndgame x
@@ -47,5 +47,5 @@ mainLoop (board, (player, playerType), (nextPlayer, nextPlayerType)) = do
 main = do
 	(boardsize:hPlayers:_) <- getArgs
 	let board = read boardsize
-	let players = playerVector (read hPlayers)  --TODO: no arg or 0 means AI vs AI, 1 means human v AI, 2 means human v human
+	let players = playerVector (read hPlayers)  
 	mainLoop (newBoard board, fst players, snd players)
