@@ -2,10 +2,16 @@ module Plays where
 
 import Board
 import Symmetry
-import Data.Array as Array
+import Data.Array.IArray as Array
 import Data.List as List
 import Data.Map as Map
 import Data.Maybe as Maybe
+
+data BoardState = BoardState Player Board deriving Ord
+
+instance Eq BoardState where
+  (BoardState player1 board1) == (BoardState player2 board2) = 
+					player1 == player2 && board1 == board2
 
 nextPlayer :: Player -> Player
 nextPlayer Player1 = Player2
@@ -37,23 +43,28 @@ advancePlay :: (Integer, Integer) -> Player -> Board -> Board
 advancePlay point player (Board board size) =
         Board (board Array.// [ (point, player) ] ) size
 
-intermediateScore :: Integer -> Player -> Board -> Integer
-intermediateScore morePlies player board
-  | gameOver board = Maybe.fromJust (score board)
-	| morePlies <= 0 = leafScore player board
-  | otherwise = --make a list of boards with the next play in them, map the list to intermediate scores, return the maximum or minimum as appropriate
-			if List.null possibilities then leafScore player board 
-			else playerEval adversary (List.map (intermediateScore (morePlies - 1) adversary) possibilities)
-      where     
+intermediateScore :: Map BoardState Integer -> Integer -> Player -> Board -> (Map BoardState Integer, Integer)
+intermediateScore memoTable plies player board =
+				--map of the tuple (player, board) to integer - scores are dependent on who's to play next
+				case Map.lookup (BoardState player board) memoTable of 
+								Just p -> (memoTable, p)
+								Nothing -> intermediateScore' memoTable plies player board
+
+whichScore :: Map BoardState Integer -> Integer -> Player -> Board -> (Map BoardState Integer, Integer)
+whichScore memoTable plies player board =
+  if gameOver board || List.null possibilities || plies <= 0 then 
+				case score board of
+								Just x -> (memoTable, x)
+								Nothing -> (memoTable, 0)
+	else playerEval adversary (List.map (intermediateScore memoTable (plies - 1) adversary) possibilities) 
+				where 
 				adversary = nextPlayer player
 				possibilities = nextPlays adversary board
 
---need a memoizer of type Memo.Integral, Memo.Player, Memo.Board
-leafScore :: Player -> Board -> Integer
-leafScore player board 
-		| List.null (winningPlays player board) = 0
-		| player == Player1 = 1
-		| otherwise = -1
+intermediateScore' :: Map BoardState Integer -> Integer -> Player -> Board -> (Map BoardState Integer, Integer)
+intermediateScore' memoTable plies player board =
+				(Map.insert (BoardState player board) score newMap, score)
+				where (newMap, score) = whichScore memoTable plies player board
 
 nextPlays :: Player -> Board -> [ Board ]
 nextPlays nextPlayer board =
@@ -61,12 +72,13 @@ nextPlays nextPlayer board =
 
 bestMove :: Player -> Board -> (Integer, Integer)
 bestMove player board =
-        snd (List.foldl' fitness acc possibleBoards) 
-                where   possibleBoards = 
-												-- TODO: memoize this computation.
-                                [ (intermediateScore 5 player (advancePlay p player board), p) | p <- nonDuplicatePlays board ] 
-                        fitness = pairEval (pairPlayerEval player)
-                        acc = (playerBound player, undefined)
+				snd (List.foldl' fitness acc possibleBoards) 
+                where   
+								openSpots = nonDuplicatePlays board
+								depthLimit = if List.length openSpots > 3 then 2 else 5
+								possibleBoards = [ (snd $ intermediateScore (Map.fromList []) depthLimit player (advancePlay p player board), p) | p <- openSpots ] 
+								fitness = pairEval (pairPlayerEval player)
+								acc = (playerBound player, undefined)
 
 nextGameState :: (Player, Board) -> (Player, Board)
 nextGameState (player, board)
